@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AeroMonitor v2.4 | Mission Control</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glow-emerald { box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+        .glow-red { box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+        .glow-orange { box-shadow: 0 0 15px rgba(249, 115, 22, 0.5); }
+        .pulse-red { animation: pulse-red 2s infinite; }
+        @keyframes pulse-red {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        body { background-color: #0f172a; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        /* Live data unavailable banner */
+        #live-error-banner {
+            display: none;
+            position: fixed;
+            top: 64px;
+            left: 80px;
+            right: 0;
+            z-index: 45;
+            background: rgba(239,68,68,0.15);
+            border-bottom: 1px solid rgba(239,68,68,0.3);
+            padding: 8px 24px;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            color: #fca5a5;
+            text-align: center;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-container": "#798098",
+                    "on-error": "#690005",
+                    "on-secondary-fixed-variant": "#3c475a",
+                    "secondary-fixed": "#d8e3fb",
+                    "outline-variant": "#45464d",
+                    "error-container": "#93000a",
+                    "surface-tint": "#bec6e0",
+                    "surface-variant": "#353436",
+                    "surface-container": "#1f1f21",
+                    "on-surface-variant": "#c6c6cd",
+                    "tertiary-fixed": "#fcdeb5",
+                    "primary": "#bec6e0",
+                    "on-tertiary-container": "#957d5a",
+                    "on-tertiary-fixed-variant": "#574425",
+                    "surface-container-low": "#1b1b1d",
+                    "tertiary": "#dec29a",
+                    "surface": "#131315",
+                    "on-primary": "#283044",
+                    "error": "#ffb4ab",
+                    "inverse-primary": "#565e74",
+                    "on-tertiary": "#3e2d11",
+                    "surface-container-highest": "#353436",
+                    "surface-container-lowest": "#0e0e10",
+                    "primary-fixed": "#dae2fd",
+                    "on-error-container": "#ffdad6",
+                    "primary-container": "#0f172a",
+                    "secondary-container": "#3e495d",
+                    "tertiary-container": "#231500",
+                    "secondary": "#bcc7de",
+                    "on-primary-fixed-variant": "#3f465c",
+                    "on-tertiary-fixed": "#271901",
+                    "on-primary-fixed": "#131b2e",
+                    "on-background": "#e4e2e4",
+                    "on-secondary": "#263143",
+                    "primary-fixed-dim": "#bec6e0",
+                    "surface-bright": "#39393b",
+                    "surface-dim": "#131315",
+                    "outline": "#909097",
+                    "on-secondary-fixed": "#111c2d",
+                    "tertiary-fixed-dim": "#dec29a",
+                    "surface-container-high": "#2a2a2b",
+                    "on-secondary-container": "#aeb9d0",
+                    "inverse-on-surface": "#303032",
+                    "background": "#131315",
+                    "on-surface": "#e4e2e4",
+                    "inverse-surface": "#e4e2e4",
+                    "secondary-fixed-dim": "#bcc7de"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "container-padding": "24px",
+                    "unit": "4px",
+                    "card-gap": "20px",
+                    "grid-gutter": "16px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Inter"],
+                    "body-base": ["Inter"],
+                    "data-lg": ["JetBrains Mono"],
+                    "headline-md": ["Inter"],
+                    "data-sm": ["JetBrains Mono"],
+                    "label-caps": ["Inter"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-base": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "data-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.03em", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "data-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="text-on-surface selection:bg-primary/30">
+<!-- Live Data Error Banner -->
+<div id="live-error-banner">⚠ Live data unavailable — displaying last cached values</div>
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full z-40 flex flex-col pt-20 bg-surface-container border-r border-white/10 shadow-2xl w-20 hover:w-64 transition-all duration-300 group overflow-hidden">
+<div class="px-6 mb-8 flex items-center space-x-4">
+<div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-primary" data-icon="hub">hub</span>
+</div>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+<p class="text-primary font-bold font-label-caps text-label-caps uppercase tracking-widest">Mission Control</p>
+<p class="text-[10px] text-on-surface-variant">Wind Farm Alpha</p>
+</div>
+</div>
+<div class="flex-1 space-y-2 px-3">
+<!-- Active: Dashboard -->
+<a class="flex items-center space-x-4 p-3 rounded-lg bg-secondary-container/30 text-primary border-l-4 border-primary transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="opacity-0 group-hover:opacity-100 font-label-caps text-label-caps uppercase tracking-wider">Dashboard</span>
+</a>
+<a class="flex items-center space-x-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-all duration-300" href="History_Log_Code.html">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="opacity-0 group-hover:opacity-100 font-label-caps text-label-caps uppercase tracking-wider">Alert History</span>
+</a>
+<a class="flex items-center space-x-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="opacity-0 group-hover:opacity-100 font-label-caps text-label-caps uppercase tracking-wider">System Status</span>
+</a>
+<a class="flex items-center space-x-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="opacity-0 group-hover:opacity-100 font-label-caps text-label-caps uppercase tracking-wider">Settings</span>
+</a>
+</div>
+<div class="p-3 border-t border-white/5 space-y-2">
+<a class="flex items-center space-x-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="opacity-0 group-hover:opacity-100 font-label-caps text-label-caps uppercase tracking-wider">Support</span>
+</a>
+<a class="flex items-center space-x-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="opacity-0 group-hover:opacity-100 font-label-caps text-label-caps uppercase tracking-wider">Log Out</span>
+</a>
+</div>
+</nav>
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-surface/70 backdrop-blur-3xl border-b border-white/10 shadow-md">
+<div class="flex items-center space-x-8 pl-16">
+<h1 class="text-headline-md font-headline-md font-bold tracking-tight text-primary">AeroMonitor v2.4</h1>
+<div class="hidden md:flex items-center space-x-6">
+<div class="flex items-center space-x-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]" data-icon="sync">sync</span>
+<span class="font-data-sm text-data-sm text-on-surface-variant" id="last-sync-label">Last Sync: —</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="schedule">schedule</span>
+<span class="font-data-sm text-data-sm text-primary">Live Refresh: Every 60s</span>
+</div>
+<!-- Farm summary pills -->
+<div class="flex items-center space-x-3" id="farm-summary-bar">
+<span class="text-[10px] font-label-caps text-on-surface-variant bg-white/5 px-2 py-1 rounded">
+  <span id="summary-operational" class="text-emerald-400 font-data-sm">—</span> Online
+</span>
+<span class="text-[10px] font-label-caps text-on-surface-variant bg-white/5 px-2 py-1 rounded">
+  <span id="summary-failed" class="text-error font-data-sm">—</span> Failed
+</span>
+<span class="text-[10px] font-label-caps text-on-surface-variant bg-white/5 px-2 py-1 rounded">
+  <span id="summary-kwh" class="text-primary font-data-sm">—</span> kWh Today
+</span>
+</div>
+</div>
+</div>
+<div class="flex items-center space-x-4">
+<button class="p-2 rounded hover:bg-white/5 text-on-surface-variant transition-colors active:scale-95 duration-100" id="manual-refresh-btn" title="Refresh now">
+<span class="material-symbols-outlined" data-icon="refresh">refresh</span>
+</button>
+<button class="p-2 rounded hover:bg-white/5 text-on-surface-variant transition-colors relative active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full glow-red" id="notif-badge" style="display:none;"></span>
+</button>
+<button class="p-2 rounded hover:bg-white/5 text-on-surface-variant transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-white/20">
+<img alt="Operator Profile Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBS5D6ByvO2S-C5xoeeYV1m40qDezoc0mpZp_UdQukps2R6ydIaMbgG4gdU87w0Mgu6voNpt9kipqGXlNBzj7qZSQ4Mu45ZgM1LuEIS2nI2F_eJSalOfCLxtMGGVGpULj3yr_NNRN5Tja-vCJXdG8d5fxVmQsgzvJtYN6ro7zCwH5Ow2vt0sNTrYS6TiVjY0eKORg9VDuBaHLgwLrq7P6_bZKbimxWe-Jzldahvwq2y8A8GmV5ypYvY0GdtsEt5cJA88Ksrn8bluo4"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="pl-20 pt-16 min-h-screen flex">
+<div class="flex-1 p-6 space-y-8 max-w-[calc(100vw-450px)]">
+<!-- KPI Section -->
+<div class="grid grid-cols-1 md:grid-cols-5 gap-card-gap">
+<!-- Total Windmills -->
+<div class="glass-panel p-4 rounded-xl">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">TOTAL WINDMILLS</p>
+<div class="flex items-end justify-between">
+<span class="font-data-lg text-data-lg text-on-surface" id="kpi-total" style="font-family:'JetBrains Mono',monospace">—</span>
+<span class="material-symbols-outlined text-primary opacity-50" data-icon="wind_power">wind_power</span>
+</div>
+</div>
+<!-- Running -->
+<div class="glass-panel p-4 rounded-xl border-l-4 border-emerald-500/50">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">RUNNING</p>
+<div class="flex items-end justify-between">
+<span class="font-data-lg text-data-lg text-emerald-400" id="kpi-running" style="font-family:'JetBrains Mono',monospace">—</span>
+<div class="w-2 h-2 rounded-full bg-emerald-500 glow-emerald mb-2"></div>
+</div>
+</div>
+<!-- Failed -->
+<div class="glass-panel p-4 rounded-xl border-l-4 border-error/50">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">FAILED / NOT RUNNING</p>
+<div class="flex items-end justify-between">
+<span class="font-data-lg text-data-lg text-error" id="kpi-failed" style="font-family:'JetBrains Mono',monospace">—</span>
+<div class="w-2 h-2 rounded-full bg-error glow-red pulse-red mb-2" id="kpi-failed-pip"></div>
+</div>
+</div>
+<!-- Snoozed -->
+<div class="glass-panel p-4 rounded-xl border-l-4 border-orange-500/50">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">SNOOZED ALERTS</p>
+<div class="flex items-end justify-between">
+<span class="font-data-lg text-data-lg text-tertiary" id="kpi-snoozed" style="font-family:'JetBrains Mono',monospace">—</span>
+<span class="material-symbols-outlined text-tertiary text-[20px] mb-1" data-icon="alarm_off">alarm_off</span>
+</div>
+</div>
+<!-- Total kWh -->
+<div class="glass-panel p-4 rounded-xl">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">TOTAL kWh TODAY</p>
+<div class="flex items-end justify-between">
+<span class="font-data-lg text-data-lg text-primary" id="kpi-kwh" style="font-family:'JetBrains Mono',monospace;font-size:22px">—</span>
+<div class="flex h-12 items-end space-x-0.5">
+<div class="w-1 bg-primary/20 h-4"></div>
+<div class="w-1 bg-primary/40 h-6"></div>
+<div class="w-1 bg-primary/60 h-8"></div>
+<div class="w-1 bg-primary h-10"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Turbine Grid -->
+<div>
+<div class="flex items-center justify-between mb-6">
+<h2 class="font-headline-md text-headline-md text-on-surface">Turbine Status Grid</h2>
+<div class="flex space-x-2">
+<div class="flex items-center px-3 py-1 bg-white/5 rounded-full border border-white/10">
+<span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+<span class="text-[10px] font-label-caps text-on-surface-variant uppercase">Normal</span>
+</div>
+<div class="flex items-center px-3 py-1 bg-white/5 rounded-full border border-white/10">
+<span class="w-2 h-2 rounded-full bg-error mr-2"></span>
+<span class="text-[10px] font-label-caps text-on-surface-variant uppercase">Critical</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4" id="turbine-grid">
+<!-- JS will populate these from API -->
+<div class="glass-panel p-4 rounded-xl flex items-center justify-center text-on-surface-variant text-sm col-span-full" id="turbine-grid-loading">
+  Loading turbine data…
+</div>
+</div>
+</div>
+</div>
+<!-- Right Panel: Active Alerts -->
+<aside class="fixed right-0 top-16 w-full md:w-[350px] lg:w-[400px] h-[calc(100vh-64px)] glass-panel border-l border-white/10 flex flex-col">
+<div class="p-6 border-b border-white/10">
+<div class="flex items-center justify-between mb-2">
+<h2 class="font-headline-md text-headline-md text-on-surface">Active Alerts</h2>
+<span class="bg-error/20 text-error px-2 py-0.5 rounded text-[10px] font-bold" id="alert-priority-badge">—</span>
+</div>
+<p class="text-body-base font-body-base text-on-surface-variant text-sm">Reviewing current system failures</p>
+</div>
+<div class="flex-1 overflow-y-auto p-6 space-y-4" id="alerts-panel">
+<div class="text-on-surface-variant text-sm text-center py-8">Loading alerts…</div>
+</div>
+<!-- Map Visualization Mini -->
+<div class="p-6 pb-0">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-3">GEOSPATIAL LOCATOR</p>
+<div class="w-full h-40 rounded-xl overflow-hidden glass-panel border border-white/10 relative grayscale contrast-125 opacity-70">
+<img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvNPVQHeXtpybTKerE_QkkPD2U2Q17ikkAYGAbv5ET_9MpTwJo-8py95fmnjaWU2kbV1KKtIqeY0hwcLSDv6XX31LAbm-a6lCtWHM2qOQQXBURv--q27PpfdFsATGr23lWaityMVoSjgrquSCGpHh_id88BmdVatqP-RltfFks3YOYtYS2X0NWK4AmR35czkkRvzyuDs21RwcYsdlimjKYs0z_PDKh4tSjsWkJukBcH_j-HCAHnXZJzoKwzKsRwsnZg_bGE2aLyN0" alt="Wind Farm Geospatial Map"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="w-4 h-4 bg-error rounded-full glow-red pulse-red" id="map-alert-pip" style="display:none;"></div>
+</div>
+</div>
+</div>
+<!-- Footer Stats -->
+<div class="p-4 bg-surface-container border-t border-white/10 mt-4">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant">NODE STATUS</span>
+<span class="flex items-center text-[10px] font-data-sm text-emerald-400" id="node-status">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1"></span>
+ONLINE
+</span>
+</div>
+</div>
+</aside>
+</main>
+<script>
+    // ---------------------------------------------------------------------------
+    // AeroMonitor v2.4 — Dashboard API Integration
+    // ---------------------------------------------------------------------------
+
+    const API_BASE = '/api';
+    const REFRESH_INTERVAL_MS = 60000;
+
+    let _refreshTimer = null;
+    let _alertsData = [];
+
+    // ---------------------------------------------------------------------------
+    // Error banner
+    // ---------------------------------------------------------------------------
+    function showErrorBanner() {
+        document.getElementById('live-error-banner').style.display = 'block';
+        document.getElementById('node-status').innerHTML =
+            '<span class="w-1.5 h-1.5 rounded-full bg-error mr-1"></span><span class="text-error">DEGRADED</span>';
+    }
+
+    function hideErrorBanner() {
+        document.getElementById('live-error-banner').style.display = 'none';
+        document.getElementById('node-status').innerHTML =
+            '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1"></span>ONLINE';
+    }
+
+    // ---------------------------------------------------------------------------
+    // Status → CSS mapping
+    // ---------------------------------------------------------------------------
+    function statusToClasses(status) {
+        const s = (status || '').toUpperCase();
+        if (s === 'OPERATIONAL') {
+            return {
+                pip: 'bg-emerald-500 glow-emerald',
+                card: 'border-white/10',
+                cardGlow: 'glow-emerald',
+                text: 'text-emerald-400',
+            };
+        }
+        if (s === 'FAILURE' || s === 'FAILED' || s === 'ERROR') {
+            return {
+                pip: 'bg-error glow-red pulse-red',
+                card: 'border-error/30',
+                cardGlow: 'glow-red',
+                text: 'text-error',
+            };
+        }
+        if (s === 'MAINTENANCE') {
+            return {
+                pip: 'bg-orange-500 glow-orange',
+                card: 'border-orange-500/30',
+                cardGlow: 'glow-orange',
+                text: 'text-orange-400',
+            };
+        }
+        // OFFLINE / UNKNOWN
+        return {
+            pip: 'bg-on-surface-variant/30',
+            card: 'border-white/5',
+            cardGlow: '',
+            text: 'text-on-surface-variant',
+        };
+    }
+
+    // ---------------------------------------------------------------------------
+    // Build a turbine card HTML string
+    // ---------------------------------------------------------------------------
+    function buildTurbineCard(turbine) {
+        const cls = statusToClasses(turbine.status);
+        const name = turbine.turbine_name || '—';
+        const statusText = (turbine.status || 'UNKNOWN').toUpperCase();
+        const kw = turbine.kw != null ? turbine.kw.toFixed(0) + ' kW' : '— kW';
+        const wind = turbine.wind_speed != null ? turbine.wind_speed.toFixed(1) + ' m/s' : '— m/s';
+        const kwh = turbine.today_kwh != null ? turbine.today_kwh.toFixed(0) : '—';
+        const progress = turbine.today_kwh != null ? Math.min((turbine.today_kwh / 20000) * 100, 100) : 0;
+
+        let timeStr = '—';
+        if (turbine.collected_at) {
+            try {
+                const d = new Date(turbine.collected_at);
+                timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            } catch (_) {}
+        }
+
+        return `
+            <div class="glass-panel p-4 rounded-xl border ${cls.card} ${cls.cardGlow} hover:bg-white/10 transition-all duration-300 group">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="font-label-caps text-label-caps text-primary">${name}</h3>
+                        <p class="text-[10px] ${cls.text} uppercase tracking-tighter">${statusText}</p>
+                    </div>
+                    <div class="w-3 h-3 rounded-full ${cls.pip}"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-y-3 gap-x-2">
+                    <div>
+                        <p class="text-[10px] text-on-surface-variant font-label-caps">OUTPUT</p>
+                        <p class="font-data-sm text-data-sm text-on-surface" style="font-family:'JetBrains Mono',monospace">${kw}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-on-surface-variant font-label-caps">WIND</p>
+                        <p class="font-data-sm text-data-sm text-on-surface" style="font-family:'JetBrains Mono',monospace">${wind}</p>
+                    </div>
+                    <div class="col-span-2">
+                        <div class="h-1 w-full bg-white/5 rounded-full overflow-hidden mb-1">
+                            <div class="h-full bg-primary/40" style="width:${progress.toFixed(1)}%"></div>
+                        </div>
+                        <div class="flex justify-between">
+                            <p class="text-[9px] text-on-surface-variant">DAILY TOTAL</p>
+                            <p class="text-[9px] text-on-surface-variant" style="font-family:'JetBrains Mono',monospace">${kwh} kWh</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-white/5 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span class="text-[9px] font-data-sm text-on-surface-variant" style="font-family:'JetBrains Mono',monospace">${timeStr}</span>
+                    <button class="text-[10px] text-primary hover:underline font-label-caps">TELEMETRY</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Build an alert card for the right panel
+    // ---------------------------------------------------------------------------
+    function buildAlertCard(alert) {
+        const isCritical = alert.severity === 'CRITICAL';
+        const borderColor = isCritical ? 'border-error/40' : 'border-orange-500/30';
+        const barColor = isCritical ? 'bg-error' : 'bg-orange-500';
+        const iconName = isCritical ? 'error' : 'warning';
+        const iconColor = isCritical ? 'text-error' : 'text-orange-400';
+        const labelColor = isCritical ? 'text-error' : 'text-orange-400';
+        const labelText = isCritical ? 'CRITICAL FAILURE' : 'WARNING';
+
+        let timeStr = '—';
+        if (alert.first_detected) {
+            try {
+                const d = new Date(alert.first_detected);
+                timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } catch (_) {}
+        }
+
+        const stateLabel = alert.state === 'SNOOZED' ? '(SNOOZED)' :
+                           alert.state === 'ACKNOWLEDGED' ? '(ACK)' : '';
+
+        return `
+            <div class="glass-panel p-5 rounded-xl border ${borderColor} relative overflow-hidden" data-alert-id="${alert.id}">
+                <div class="absolute top-0 left-0 w-1 h-full ${barColor}"></div>
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="material-symbols-outlined ${iconColor}">${iconName}</span>
+                        <span class="font-label-caps text-label-caps ${labelColor}">${labelText} ${stateLabel}</span>
+                    </div>
+                    <span class="font-data-sm text-data-sm text-on-surface-variant" style="font-family:'JetBrains Mono',monospace">${timeStr}</span>
+                </div>
+                <h4 class="font-headline-md text-[18px] text-on-surface mb-1">${alert.turbine_name}</h4>
+                <p class="text-sm text-on-surface-variant mb-4">${alert.message || 'No description available.'}</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="bg-secondary-container text-on-secondary-container py-2 rounded font-label-caps text-[10px] hover:bg-secondary-container/80 transition-colors uppercase tracking-widest ack-btn" data-alert-id="${alert.id}">Acknowledge</button>
+                    <button class="border border-white/10 text-on-surface-variant py-2 rounded font-label-caps text-[10px] hover:bg-white/5 transition-colors uppercase tracking-widest snooze-btn" data-alert-id="${alert.id}">Snooze 30m</button>
+                    <button class="col-span-2 border border-primary/30 text-primary py-2 rounded font-label-caps text-[10px] hover:bg-primary/10 transition-colors uppercase tracking-widest">View Full Details</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Fetch & render telemetry
+    // ---------------------------------------------------------------------------
+    async function fetchLiveData() {
+        try {
+            const resp = await fetch(`${API_BASE}/telemetry/live`);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            hideErrorBanner();
+            renderTurbineGrid(data.turbines);
+            renderFarmSummary(data.farm_summary);
+            // Update last sync time
+            const now = new Date();
+            document.getElementById('last-sync-label').textContent =
+                'Last Sync: ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } catch (err) {
+            console.error('Failed to fetch live telemetry:', err);
+            showErrorBanner();
+        }
+    }
+
+    function renderTurbineGrid(turbines) {
+        const grid = document.getElementById('turbine-grid');
+        if (!turbines || turbines.length === 0) {
+            grid.innerHTML = '<div class="glass-panel p-4 rounded-xl col-span-full text-on-surface-variant text-center">No turbine data available.</div>';
+            return;
+        }
+        grid.innerHTML = turbines.map(buildTurbineCard).join('');
+        // Re-apply glass panel micro-interactions
+        grid.querySelectorAll('.glass-panel').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px)';
+                card.style.borderColor = 'rgba(190, 198, 224, 0.4)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0px)';
+                card.style.borderColor = '';
+            });
+        });
+    }
+
+    function renderFarmSummary(summary) {
+        if (!summary) return;
+        document.getElementById('kpi-total').textContent = summary.total_turbines ?? '—';
+        document.getElementById('kpi-running').textContent = summary.operational ?? '—';
+        document.getElementById('kpi-failed').textContent = summary.failed ?? '—';
+        document.getElementById('summary-operational').textContent = summary.operational ?? '—';
+        document.getElementById('summary-failed').textContent = summary.failed ?? '—';
+        const kwhStr = summary.total_kwh_today != null
+            ? (summary.total_kwh_today / 1000).toFixed(1) + 'k'
+            : '—';
+        document.getElementById('kpi-kwh').textContent = summary.total_kwh_today != null
+            ? summary.total_kwh_today.toLocaleString(undefined, { maximumFractionDigits: 0 })
+            : '—';
+        document.getElementById('summary-kwh').textContent = kwhStr;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Fetch & render active alerts (right panel)
+    // ---------------------------------------------------------------------------
+    async function fetchActiveAlerts() {
+        try {
+            const resp = await fetch(`${API_BASE}/alerts/active`);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            _alertsData = data.alerts;
+            renderAlertsPanel(data);
+        } catch (err) {
+            console.error('Failed to fetch active alerts:', err);
+        }
+    }
+
+    function renderAlertsPanel(data) {
+        const panel = document.getElementById('alerts-panel');
+        const badge = document.getElementById('alert-priority-badge');
+        const notifBadge = document.getElementById('notif-badge');
+        const mapPip = document.getElementById('map-alert-pip');
+
+        const criticalCount = data.counts.OPEN + data.counts.ACKNOWLEDGED;
+
+        if (!data.alerts || data.alerts.length === 0) {
+            panel.innerHTML = '<div class="flex flex-col items-center py-8 space-y-2"><span class="material-symbols-outlined text-emerald-400 text-4xl">check_circle</span><p class="text-emerald-400 font-label-caps text-label-caps">ALL CLEAR</p><p class="text-on-surface-variant text-sm">No active alerts</p></div>';
+            badge.textContent = '0 PRIORITY';
+            notifBadge.style.display = 'none';
+            mapPip.style.display = 'none';
+        } else {
+            panel.innerHTML = data.alerts.map(buildAlertCard).join('');
+            badge.textContent = `${data.alerts.length} PRIORITY`;
+            notifBadge.style.display = 'block';
+            if (data.alerts.some(a => a.severity === 'CRITICAL')) {
+                mapPip.style.display = 'block';
+            }
+            // Wire acknowledge buttons
+            panel.querySelectorAll('.ack-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const alertId = btn.dataset.alertId;
+                    const operator = prompt('Enter operator name to acknowledge:') || 'Operator';
+                    await acknowledgeAlert(alertId, operator);
+                });
+            });
+            // Wire snooze buttons
+            panel.querySelectorAll('.snooze-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const alertId = btn.dataset.alertId;
+                    await snoozeAlert(alertId, 30);
+                });
+            });
+        }
+
+        // Update snoozed count KPI
+        document.getElementById('kpi-snoozed').textContent = data.counts.SNOOZED ?? '—';
+    }
+
+    async function acknowledgeAlert(alertId, operator) {
+        try {
+            const resp = await fetch(`${API_BASE}/alerts/${alertId}/acknowledge`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ operator }),
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            // Fade out and refresh
+            const card = document.querySelector(`[data-alert-id="${alertId}"]`);
+            if (card) {
+                card.style.transition = 'opacity 0.4s, transform 0.4s';
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(20px)';
+                setTimeout(() => fetchActiveAlerts(), 450);
+            } else {
+                fetchActiveAlerts();
+            }
+        } catch (err) {
+            console.error('Acknowledge failed:', err);
+        }
+    }
+
+    async function snoozeAlert(alertId, minutes) {
+        try {
+            const resp = await fetch(`${API_BASE}/alerts/${alertId}/snooze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ duration_minutes: minutes }),
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const card = document.querySelector(`[data-alert-id="${alertId}"]`);
+            if (card) {
+                card.style.transition = 'opacity 0.4s';
+                card.style.opacity = '0';
+                setTimeout(() => fetchActiveAlerts(), 450);
+            } else {
+                fetchActiveAlerts();
+            }
+        } catch (err) {
+            console.error('Snooze failed:', err);
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Refresh loop
+    // ---------------------------------------------------------------------------
+    async function refreshAll() {
+        await Promise.all([fetchLiveData(), fetchActiveAlerts()]);
+    }
+
+    function startRefreshTimer() {
+        if (_refreshTimer) clearInterval(_refreshTimer);
+        _refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL_MS);
+    }
+
+    // Manual refresh button
+    document.getElementById('manual-refresh-btn').addEventListener('click', refreshAll);
+
+    // Initial load
+    refreshAll();
+    startRefreshTimer();
+</script>
+</body></html>

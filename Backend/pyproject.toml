@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aeromonitor-backend"
+version = "2.4.0"
+description = "AeroMonitor v2.4 wind turbine monitoring backend"
+requires-python = ">=3.12"
+dependencies = [
+    # Web framework
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    # ORM + database
+    "sqlmodel>=0.0.21",
+    "asyncpg>=0.30.0",
+    "sqlalchemy[asyncio]>=2.0.36",
+    # HTTP client (replaces Selenium)
+    "httpx>=0.28.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=5.3.0",
+    # Scheduling
+    "apscheduler>=3.10.4",
+    # Migrations
+    "alembic>=1.14.0",
+    # Environment
+    "python-dotenv>=1.0.0",
+    # Pydantic (used by FastAPI)
+    "pydantic>=2.10.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.28.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["Backend"]

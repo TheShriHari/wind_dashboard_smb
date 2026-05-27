@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Alert History | AeroMonitor v2.4</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #131315;
+            color: #e4e2e4;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .status-glow-red { box-shadow: 0 0 10px rgba(255, 180, 171, 0.4); }
+        .status-glow-emerald { box-shadow: 0 0 10px rgba(190, 198, 224, 0.4); }
+        .status-glow-orange { box-shadow: 0 0 10px rgba(222, 194, 154, 0.4); }
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #131315; }
+        ::-webkit-scrollbar-thumb { background: #353436; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #45464d; }
+
+        /* Live data error banner */
+        #history-error-banner {
+            display: none;
+            background: rgba(239,68,68,0.12);
+            border: 1px solid rgba(239,68,68,0.25);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 12px;
+            color: #fca5a5;
+            margin-bottom: 16px;
+        }
+
+        /* Zebra striping for dynamically added rows */
+        #history-tbody tr:nth-child(even) {
+            background: rgba(255,255,255,0.02);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-container": "#798098",
+                      "on-error": "#690005",
+                      "on-secondary-fixed-variant": "#3c475a",
+                      "secondary-fixed": "#d8e3fb",
+                      "outline-variant": "#45464d",
+                      "error-container": "#93000a",
+                      "surface-tint": "#bec6e0",
+                      "surface-variant": "#353436",
+                      "surface-container": "#1f1f21",
+                      "on-surface-variant": "#c6c6cd",
+                      "tertiary-fixed": "#fcdeb5",
+                      "primary": "#bec6e0",
+                      "on-tertiary-container": "#957d5a",
+                      "on-tertiary-fixed-variant": "#574425",
+                      "surface-container-low": "#1b1b1d",
+                      "tertiary": "#dec29a",
+                      "surface": "#131315",
+                      "on-primary": "#283044",
+                      "error": "#ffb4ab",
+                      "inverse-primary": "#565e74",
+                      "on-tertiary": "#3e2d11",
+                      "surface-container-highest": "#353436",
+                      "surface-container-lowest": "#0e0e10",
+                      "primary-fixed": "#dae2fd",
+                      "on-error-container": "#ffdad6",
+                      "primary-container": "#0f172a",
+                      "secondary-container": "#3e495d",
+                      "tertiary-container": "#231500",
+                      "secondary": "#bcc7de",
+                      "on-primary-fixed-variant": "#3f465c",
+                      "on-tertiary-fixed": "#271901",
+                      "on-primary-fixed": "#131b2e",
+                      "on-background": "#e4e2e4",
+                      "on-secondary": "#263143",
+                      "primary-fixed-dim": "#bec6e0",
+                      "surface-bright": "#39393b",
+                      "surface-dim": "#131315",
+                      "outline": "#909097",
+                      "on-secondary-fixed": "#111c2d",
+                      "tertiary-fixed-dim": "#dec29a",
+                      "surface-container-high": "#2a2a2b",
+                      "on-secondary-container": "#aeb9d0",
+                      "inverse-on-surface": "#303032",
+                      "background": "#131315",
+                      "on-surface": "#e4e2e4",
+                      "inverse-surface": "#e4e2e4",
+                      "secondary-fixed-dim": "#bcc7de"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "container-padding": "24px",
+                      "unit": "4px",
+                      "card-gap": "20px",
+                      "grid-gutter": "16px"
+              },
+              "fontFamily": {
+                      "display-lg": ["Inter"],
+                      "body-base": ["Inter"],
+                      "data-lg": ["JetBrains Mono"],
+                      "headline-md": ["Inter"],
+                      "data-sm": ["JetBrains Mono"],
+                      "label-caps": ["Inter"]
+              },
+              "fontSize": {
+                      "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-base": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "data-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.03em", "fontWeight": "500"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "data-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                      "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-surface">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-surface/70 backdrop-blur-3xl border-b border-white/10 shadow-md">
+<div class="flex items-center gap-4">
+<span class="text-headline-md font-headline-md font-bold tracking-tight text-primary">AeroMonitor v2.4</span>
+<div class="h-6 w-px bg-white/10 mx-2"></div>
+<span class="text-body-base font-body-base text-on-surface-variant">Wind Farm Alpha</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-white/5 transition-colors rounded-lg active:scale-95 duration-100" id="refresh-btn">
+<span class="material-symbols-outlined text-on-surface-variant">refresh</span>
+</button>
+<button class="p-2 hover:bg-white/5 transition-colors rounded-lg relative active:scale-95 duration-100">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full status-glow-red"></span>
+</button>
+<button class="p-2 hover:bg-white/5 transition-colors rounded-lg active:scale-95 duration-100">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+</div>
+<img alt="Operator Profile Avatar" class="w-8 h-8 rounded-full border border-white/20 object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbQoo-5vc49_j7f9peUjm0d90L-TRWXHPAOIMgv6IhptDhCht5JnX_JUzaGWjFa8nKSrB0ERQOAX6QJki28ZpVkxY5Tfp48dFUedvBqM3SZ4wxcGrkjqMgUfjLI4rTXqUtfohKH6NbB1WEGdpMTgtFZ3MvVKMsNYVMZ2Eu2MQjehiJ_nbGlOZ2QosreDTTcx7LzMPvrdejdjIr65AS6un2zrP4bV7dNDA2vPWdYe6UDksvilALVXAhiwyRhV1oI-xYaMTrpzGeiXk"/>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full z-40 flex flex-col pt-20 bg-surface-container border-r border-white/10 shadow-2xl w-20 hover:w-64 transition-all duration-300 group overflow-hidden">
+<div class="flex flex-col flex-1 px-4 gap-4">
+<div class="flex items-center gap-4 py-4 mb-2">
+<span class="material-symbols-outlined text-primary min-w-[24px]">shield</span>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap overflow-hidden">
+<p class="text-primary font-bold text-label-caps font-label-caps">Mission Control</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest">Alpha Sector</p>
+</div>
+</div>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-all" href="Dashboard_Code.html">
+<span class="material-symbols-outlined min-w-[24px]">dashboard</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity text-label-caps font-label-caps">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 p-3 rounded-lg bg-secondary-container/30 text-primary border-l-4 border-primary transition-all" href="#">
+<span class="material-symbols-outlined min-w-[24px]">history</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity text-label-caps font-label-caps">Alert History</span>
+</a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-all" href="#">
+<span class="material-symbols-outlined min-w-[24px]">analytics</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity text-label-caps font-label-caps">System Status</span>
+</a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-all" href="#">
+<span class="material-symbols-outlined min-w-[24px]">settings</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity text-label-caps font-label-caps">Settings</span>
+</a>
+</div>
+<div class="p-4 border-t border-white/10 flex flex-col gap-2">
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-all" href="#">
+<span class="material-symbols-outlined min-w-[24px]">help</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity text-label-caps font-label-caps">Support</span>
+</a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-all" href="#">
+<span class="material-symbols-outlined min-w-[24px]">logout</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity text-label-caps font-label-caps">Log Out</span>
+</a>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="ml-20 pt-24 px-8 pb-12 transition-all">
+<div class="max-w-[1600px] mx-auto">
+<!-- Error Banner -->
+<div id="history-error-banner">⚠ Live data unavailable — showing cached data or empty state.</div>
+<!-- Header & Global Filters -->
+<div class="mb-8">
+<div class="flex justify-between items-end mb-6">
+<div>
+<h1 class="text-headline-md font-headline-md text-on-surface mb-1">Alert History</h1>
+<p class="text-body-base font-body-base text-on-surface-variant">Review and manage past turbine system anomalies.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 glass-panel rounded-lg hover:bg-white/10 transition-colors text-label-caps font-label-caps text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">download</span>
+Export CSV
+</button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity text-label-caps font-label-caps">
+<span class="material-symbols-outlined text-[18px]">print</span>
+Generate Report
+</button>
+</div>
+</div>
+<!-- Filter Bar -->
+<div class="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 glass-panel rounded-xl">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full bg-surface-container-lowest border border-white/10 rounded-lg py-2 pl-10 pr-4 text-body-base font-body-base focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/50" placeholder="Turbine Name..." type="text" id="filter-search"/>
+</div>
+<select class="bg-surface-container-lowest border border-white/10 rounded-lg py-2 px-4 text-body-base font-body-base focus:ring-1 focus:ring-primary outline-none appearance-none" id="filter-severity">
+<option value="">Severity: All</option>
+<option value="CRITICAL">Severity: Critical</option>
+<option value="WARNING">Severity: Warning</option>
+</select>
+<div class="relative">
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">calendar_today</span>
+<input class="w-full bg-surface-container-lowest border border-white/10 rounded-lg py-2 px-4 text-body-base font-body-base focus:ring-1 focus:ring-primary outline-none cursor-pointer" type="text" value="All Time" readonly/>
+</div>
+<select class="bg-surface-container-lowest border border-white/10 rounded-lg py-2 px-4 text-body-base font-body-base focus:ring-1 focus:ring-primary outline-none appearance-none" id="filter-state">
+<option value="">State: All</option>
+<option value="OPEN">State: Open</option>
+<option value="ACKNOWLEDGED">State: Acknowledged</option>
+<option value="SNOOZED">State: Snoozed</option>
+<option value="RESOLVED">State: Resolved</option>
+</select>
+<button class="bg-white/5 hover:bg-white/10 border border-white/10 text-on-surface rounded-lg py-2 px-4 text-label-caps font-label-caps transition-all flex items-center justify-center gap-2" id="apply-filter-btn">
+<span class="material-symbols-outlined text-[18px]">filter_alt</span>
+Apply Filters
+</button>
+</div>
+</div>
+<!-- Main Data Table Container -->
+<div class="glass-panel rounded-xl overflow-hidden mb-6">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-white/5 border-b border-white/10">
+<th class="py-4 px-6 text-label-caps font-label-caps text-on-surface-variant tracking-wider uppercase">Turbine Name</th>
+<th class="py-4 px-6 text-label-caps font-label-caps text-on-surface-variant tracking-wider uppercase">Severity</th>
+<th class="py-4 px-6 text-label-caps font-label-caps text-on-surface-variant tracking-wider uppercase">First Detected</th>
+<th class="py-4 px-6 text-label-caps font-label-caps text-on-surface-variant tracking-wider uppercase">Last Notified</th>
+<th class="py-4 px-6 text-label-caps font-label-caps text-on-surface-variant tracking-wider uppercase">Acknowledged By</th>
+<th class="py-4 px-6 text-label-caps font-label-caps text-on-surface-variant tracking-wider uppercase">Snooze Time</th>
+<th class="py-4 px-6 text-label-caps font-label-caps text-on-surface-variant tracking-wider uppercase">Resolved Time</th>
+<th class="py-4 px-6 text-label-caps font-label-caps text-on-surface-variant tracking-wider uppercase">Final State</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-white/5" id="history-tbody">
+<tr>
+<td colspan="8" class="py-12 text-center text-on-surface-variant">Loading alert history…</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="flex items-center justify-between px-6 py-4 bg-white/5 border-t border-white/10">
+<div class="text-label-caps font-label-caps text-on-surface-variant" id="pagination-info">
+Showing — alerts
+</div>
+<div class="flex items-center gap-2" id="pagination-controls">
+<button class="w-8 h-8 flex items-center justify-center glass-panel rounded hover:bg-white/10 transition-colors disabled:opacity-30" id="prev-page-btn" disabled>
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<span class="text-label-caps font-label-caps text-on-surface-variant px-2" id="page-indicator">Page 1</span>
+<button class="w-8 h-8 flex items-center justify-center glass-panel rounded hover:bg-white/10 transition-colors" id="next-page-btn">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-label-caps font-label-caps text-on-surface-variant">Rows per page:</span>
+<select class="bg-surface-container-lowest border border-white/10 rounded px-2 py-1 text-data-sm font-data-sm outline-none" id="per-page-select">
+<option value="10">10</option>
+<option value="25" selected>25</option>
+<option value="50">50</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Global Stats (Mini Pods) -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-card-gap">
+<div class="glass-panel p-4 rounded-xl flex items-center gap-4">
+<div class="w-10 h-10 rounded bg-error-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-error">dangerous</span>
+</div>
+<div>
+<p class="text-label-caps font-label-caps text-on-surface-variant">Total Critical</p>
+<p class="text-data-lg font-data-lg text-error" id="stat-critical" style="font-family:'JetBrains Mono',monospace">—</p>
+</div>
+</div>
+<div class="glass-panel p-4 rounded-xl flex items-center gap-4">
+<div class="w-10 h-10 rounded bg-primary-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">check_circle</span>
+</div>
+<div>
+<p class="text-label-caps font-label-caps text-on-surface-variant">Total Resolved</p>
+<p class="text-data-lg font-data-lg text-primary" id="stat-resolved" style="font-family:'JetBrains Mono',monospace">—</p>
+</div>
+</div>
+<div class="glass-panel p-4 rounded-xl flex items-center gap-4">
+<div class="w-10 h-10 rounded bg-tertiary-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary">snooze</span>
+</div>
+<div>
+<p class="text-label-caps font-label-caps text-on-surface-variant">Snoozed</p>
+<p class="text-data-lg font-data-lg text-tertiary" id="stat-snoozed" style="font-family:'JetBrains Mono',monospace">—</p>
+</div>
+</div>
+<div class="glass-panel p-4 rounded-xl flex items-center gap-4">
+<div class="w-10 h-10 rounded bg-white/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">timer</span>
+</div>
+<div>
+<p class="text-label-caps font-label-caps text-on-surface-variant">Total Warnings</p>
+<p class="text-data-lg font-data-lg text-on-surface" id="stat-warning" style="font-family:'JetBrains Mono',monospace">—</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+    // ---------------------------------------------------------------------------
+    // AeroMonitor v2.4 — History Log API Integration
+    // ---------------------------------------------------------------------------
+
+    const API_BASE = '/api';
+
+    let _currentPage = 1;
+    let _totalPages = 1;
+    let _perPage = 25;
+    let _severityFilter = '';
+    let _stateFilter = '';
+
+    // ---------------------------------------------------------------------------
+    // Error banner
+    // ---------------------------------------------------------------------------
+    function showErrorBanner() {
+        document.getElementById('history-error-banner').style.display = 'block';
+    }
+
+    function hideErrorBanner() {
+        document.getElementById('history-error-banner').style.display = 'none';
+    }
+
+    // ---------------------------------------------------------------------------
+    // Format timestamps for JetBrains Mono display
+    // ---------------------------------------------------------------------------
+    function formatTs(ts) {
+        if (!ts) return '—';
+        try {
+            const d = new Date(ts);
+            return d.toLocaleString([], {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+        } catch (_) {
+            return ts;
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Severity badge HTML
+    // ---------------------------------------------------------------------------
+    function severityBadge(severity) {
+        if (severity === 'CRITICAL') {
+            return `<span class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-error-container text-error text-[11px] font-bold status-glow-red">
+                <span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>CRITICAL
+            </span>`;
+        }
+        return `<span class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-tertiary-container text-tertiary text-[11px] font-bold status-glow-orange">
+            <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>WARNING
+        </span>`;
+    }
+
+    // ---------------------------------------------------------------------------
+    // State badge HTML
+    // ---------------------------------------------------------------------------
+    function stateBadge(state) {
+        const s = (state || '').toUpperCase();
+        if (s === 'RESOLVED') {
+            return `<span class="text-data-sm font-data-sm text-emerald-400" style="font-family:'JetBrains Mono',monospace">RESOLVED</span>`;
+        }
+        if (s === 'OPEN') {
+            return `<span class="text-data-sm font-data-sm text-error" style="font-family:'JetBrains Mono',monospace">OPEN</span>`;
+        }
+        if (s === 'SNOOZED') {
+            return `<span class="text-data-sm font-data-sm text-tertiary" style="font-family:'JetBrains Mono',monospace">SNOOZED</span>`;
+        }
+        if (s === 'ACKNOWLEDGED') {
+            return `<span class="text-data-sm font-data-sm text-primary" style="font-family:'JetBrains Mono',monospace">ACK'D</span>`;
+        }
+        return `<span class="text-data-sm font-data-sm text-on-surface-variant">${s}</span>`;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Build a table row from an alert object
+    // ---------------------------------------------------------------------------
+    function buildRow(alert) {
+        return `
+            <tr class="hover:bg-white/5 transition-colors group cursor-pointer" data-alert-id="${alert.id}">
+                <td class="py-4 px-6 text-data-sm font-data-sm text-primary" style="font-family:'JetBrains Mono',monospace">${alert.turbine_name || '—'}</td>
+                <td class="py-4 px-6">${severityBadge(alert.severity)}</td>
+                <td class="py-4 px-6 text-data-sm font-data-sm text-on-surface-variant" style="font-family:'JetBrains Mono',monospace">${formatTs(alert.first_detected)}</td>
+                <td class="py-4 px-6 text-data-sm font-data-sm text-on-surface-variant" style="font-family:'JetBrains Mono',monospace">${formatTs(alert.last_notified)}</td>
+                <td class="py-4 px-6">
+                    ${alert.acknowledged_by
+                        ? `<span class="text-data-sm font-data-sm text-on-surface" style="font-family:'JetBrains Mono',monospace">${alert.acknowledged_by}</span>`
+                        : `<span class="text-data-sm font-data-sm text-on-surface-variant/50">—</span>`
+                    }
+                </td>
+                <td class="py-4 px-6 text-data-sm font-data-sm" style="font-family:'JetBrains Mono',monospace">
+                    ${alert.snoozed_until
+                        ? `<span class="text-tertiary">${formatTs(alert.snoozed_until)}</span>`
+                        : `<span class="text-on-surface-variant/50">—</span>`
+                    }
+                </td>
+                <td class="py-4 px-6 text-data-sm font-data-sm" style="font-family:'JetBrains Mono',monospace">
+                    ${alert.resolved_at
+                        ? `<span class="text-emerald-400">${formatTs(alert.resolved_at)}</span>`
+                        : `<span class="text-on-surface-variant/50">—</span>`
+                    }
+                </td>
+                <td class="py-4 px-6">${stateBadge(alert.state)}</td>
+            </tr>
+        `;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Fetch history from API
+    // ---------------------------------------------------------------------------
+    async function fetchHistory() {
+        const params = new URLSearchParams({
+            page: _currentPage,
+            per_page: _perPage,
+        });
+        if (_severityFilter) params.append('severity', _severityFilter);
+        if (_stateFilter) params.append('state', _stateFilter);
+
+        try {
+            const resp = await fetch(`${API_BASE}/alerts/history?${params.toString()}`);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            hideErrorBanner();
+            renderTable(data);
+            updatePaginationUI(data);
+            updateStats(data);
+        } catch (err) {
+            console.error('Failed to fetch alert history:', err);
+            showErrorBanner();
+            document.getElementById('history-tbody').innerHTML =
+                '<tr><td colspan="8" class="py-12 text-center text-on-surface-variant">Could not load data. Is the backend running?</td></tr>';
+        }
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('history-tbody');
+        if (!data.alerts || data.alerts.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="py-12 text-center text-on-surface-variant">No alerts match the current filters.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.alerts.map(buildRow).join('');
+        // Row click handler (future: open detail drawer)
+        tbody.querySelectorAll('tr').forEach(row => {
+            row.addEventListener('click', () => {
+                console.log('Alert row clicked:', row.dataset.alertId);
+            });
+        });
+    }
+
+    function updatePaginationUI(data) {
+        _totalPages = data.total_pages || 1;
+        const start = ((data.page - 1) * data.per_page) + 1;
+        const end = Math.min(data.page * data.per_page, data.total_count);
+        document.getElementById('pagination-info').textContent =
+            `Showing ${data.total_count > 0 ? start : 0}–${end} of ${data.total_count} alerts`;
+        document.getElementById('page-indicator').textContent = `Page ${data.page} of ${data.total_pages}`;
+        document.getElementById('prev-page-btn').disabled = data.page <= 1;
+        document.getElementById('next-page-btn').disabled = data.page >= data.total_pages;
+    }
+
+    function updateStats(data) {
+        // Count stats from the full dataset not just current page — use totals from response
+        // These are approximations based on current page + total_count for simplicity
+        const criticals = (data.alerts || []).filter(a => a.severity === 'CRITICAL').length;
+        const resolved = (data.alerts || []).filter(a => a.state === 'RESOLVED').length;
+        const snoozed = (data.alerts || []).filter(a => a.state === 'SNOOZED').length;
+        const warnings = (data.alerts || []).filter(a => a.severity === 'WARNING').length;
+
+        document.getElementById('stat-critical').textContent = criticals;
+        document.getElementById('stat-resolved').textContent = resolved;
+        document.getElementById('stat-snoozed').textContent = snoozed;
+        document.getElementById('stat-warning').textContent = warnings;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Pagination controls
+    // ---------------------------------------------------------------------------
+    document.getElementById('prev-page-btn').addEventListener('click', () => {
+        if (_currentPage > 1) {
+            _currentPage--;
+            fetchHistory();
+        }
+    });
+
+    document.getElementById('next-page-btn').addEventListener('click', () => {
+        if (_currentPage < _totalPages) {
+            _currentPage++;
+            fetchHistory();
+        }
+    });
+
+    document.getElementById('per-page-select').addEventListener('change', (e) => {
+        _perPage = parseInt(e.target.value, 10);
+        _currentPage = 1;
+        fetchHistory();
+    });
+
+    // ---------------------------------------------------------------------------
+    // Filter controls
+    // ---------------------------------------------------------------------------
+    document.getElementById('apply-filter-btn').addEventListener('click', () => {
+        _severityFilter = document.getElementById('filter-severity').value;
+        _stateFilter = document.getElementById('filter-state').value;
+        _currentPage = 1;
+        fetchHistory();
+    });
+
+    // Instant filter on dropdown change
+    document.getElementById('filter-severity').addEventListener('change', () => {
+        _severityFilter = document.getElementById('filter-severity').value;
+        _currentPage = 1;
+        fetchHistory();
+    });
+
+    document.getElementById('filter-state').addEventListener('change', () => {
+        _stateFilter = document.getElementById('filter-state').value;
+        _currentPage = 1;
+        fetchHistory();
+    });
+
+    // Refresh button
+    document.getElementById('refresh-btn').addEventListener('click', fetchHistory);
+
+    // Search micro-interaction (original preserved)
+    const searchInput = document.getElementById('filter-search');
+    searchInput.addEventListener('focus', () => {
+        searchInput.parentElement.classList.add('scale-[1.02]');
+    });
+    searchInput.addEventListener('blur', () => {
+        searchInput.parentElement.classList.remove('scale-[1.02]');
+    });
+
+    // ---------------------------------------------------------------------------
+    // Initial load
+    // ---------------------------------------------------------------------------
+    fetchHistory();
+</script>
+</body></html>

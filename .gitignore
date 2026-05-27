@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments & sensitive files
+.env
+.env.local
+.env.*.local
+.venv
+venv/
+ENV/
+
+# Logs
+*.log
+Backend/logs/
+logs/
+
+# IDE files
+.idea/
+.vscode/
+
+# Local diagnostic/test scripts
+dump_aswf_html.py
+inspect_aswf.py
+test_scrape.py
+test_scrape_all.py
+test_scrape_regex.py

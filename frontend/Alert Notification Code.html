@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AeroMonitor v2.4 - Mission Control</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); opacity: 1; }
+            50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.8); opacity: 0.8; }
+        }
+        .animate-pulse-glow {
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-modal {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        @keyframes card-fade-out {
+            to { opacity: 0; transform: scale(0.95); }
+        }
+        .fade-out {
+            animation: card-fade-out 0.35s ease-out forwards;
+        }
+        /* Live data error banner */
+        #alert-error-banner {
+            display: none;
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 200;
+            background: rgba(239,68,68,0.15);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            color: #fca5a5;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-container": "#798098",
+                      "on-error": "#690005",
+                      "on-secondary-fixed-variant": "#3c475a",
+                      "secondary-fixed": "#d8e3fb",
+                      "outline-variant": "#45464d",
+                      "error-container": "#93000a",
+                      "surface-tint": "#bec6e0",
+                      "surface-variant": "#353436",
+                      "surface-container": "#1f1f21",
+                      "on-surface-variant": "#c6c6cd",
+                      "tertiary-fixed": "#fcdeb5",
+                      "primary": "#bec6e0",
+                      "on-tertiary-container": "#957d5a",
+                      "on-tertiary-fixed-variant": "#574425",
+                      "surface-container-low": "#1b1b1d",
+                      "tertiary": "#dec29a",
+                      "surface": "#131315",
+                      "on-primary": "#283044",
+                      "error": "#ffb4ab",
+                      "inverse-primary": "#565e4",
+                      "on-tertiary": "#3e2d11",
+                      "surface-container-highest": "#353436",
+                      "surface-container-lowest": "#0e0e10",
+                      "primary-fixed": "#dae2fd",
+                      "on-error-container": "#ffdad6",
+                      "primary-container": "#0f172a",
+                      "secondary-container": "#3e495d",
+                      "tertiary-container": "#231500",
+                      "secondary": "#bcc7de",
+                      "on-primary-fixed-variant": "#3f465c",
+                      "on-tertiary-fixed": "#271901",
+                      "on-primary-fixed": "#131b2e",
+                      "on-background": "#e4e2e4",
+                      "on-secondary": "#263143",
+                      "primary-fixed-dim": "#bec6e0",
+                      "surface-bright": "#39393b",
+                      "surface-dim": "#131315",
+                      "outline": "#909097",
+                      "on-secondary-fixed": "#111c2d",
+                      "tertiary-fixed-dim": "#dec29a",
+                      "surface-container-high": "#2a2a2b",
+                      "on-secondary-container": "#aeb9d0",
+                      "inverse-on-surface": "#303032",
+                      "background": "#131315",
+                      "on-surface": "#e4e2e4",
+                      "inverse-surface": "#e4e2e4",
+                      "secondary-fixed-dim": "#bcc7de"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "container-padding": "24px",
+                      "unit": "4px",
+                      "card-gap": "20px",
+                      "grid-gutter": "16px"
+              },
+              "fontFamily": {
+                      "display-lg": ["Inter"],
+                      "body-base": ["Inter"],
+                      "data-lg": ["JetBrains Mono"],
+                      "headline-md": ["Inter"],
+                      "data-sm": ["JetBrains Mono"],
+                      "label-caps": ["Inter"]
+              },
+              "fontSize": {
+                      "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-base": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "data-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.03em", "fontWeight": "500"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "data-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                      "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen overflow-hidden selection:bg-primary selection:text-on-primary">
+<!-- Live data error banner -->
+<div id="alert-error-banner">⚠ Live data unavailable</div>
+<!-- Top Navigation Shell -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-surface/70 backdrop-blur-3xl shadow-md border-b border-white/10">
+<div class="text-headline-md font-headline-md font-bold tracking-tight text-primary">AeroMonitor v2.4</div>
+<div class="flex items-center gap-6">
+<!-- Alert state counts badge -->
+<div class="flex items-center gap-2 text-[11px] font-label-caps" id="counts-bar">
+  <span class="bg-error/20 text-error px-2 py-0.5 rounded font-bold" id="count-open">OPEN: —</span>
+  <span class="bg-secondary-container/40 text-on-secondary-container px-2 py-0.5 rounded" id="count-ack">ACK: —</span>
+  <span class="bg-tertiary-container/40 text-tertiary px-2 py-0.5 rounded" id="count-snoozed">SNOOZED: —</span>
+</div>
+<button class="text-on-surface-variant hover:bg-white/5 transition-colors p-2 rounded flex items-center justify-center" id="refresh-btn">
+<span class="material-symbols-outlined" data-icon="refresh">refresh</span>
+</button>
+<button class="text-on-surface-variant hover:bg-white/5 transition-colors p-2 rounded flex items-center justify-center relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full animate-pulse" id="notif-dot" style="display:none;"></span>
+</button>
+<button class="text-on-surface-variant hover:bg-white/5 transition-colors p-2 rounded flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden border border-white/10">
+<img alt="Operator Profile Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAi48kQ9PP02csmiKxNz32G36_B_Q8FuYLeIhiHFpeOLEWvbupHgE1lfi69p_rH2S5rjMRRoXBglf5CVwD76pi3yPktSJu0sMOkHHEMFBLtPx56wmiqIeFZ1CRD6LlddVPKEUzz8NyICx8JAT5-iWnnu5OGFymGX12s9kGelAVO7XyLXrRjsJ6vEVCMfDTPYdwFZ3GIf7Sn1Oz7ur8dnlrkeLdpGGcScmWempLsDRbOIvhBouOg7Ow4K2-ywYGN3KlwlvXo6AdpKpQ"/>
+</div>
+</div>
+</header>
+<!-- Side Navigation Shell -->
+<nav class="fixed left-0 top-0 h-full z-40 flex flex-col pt-20 bg-surface-container dark:bg-surface-container border-r border-white/10 w-20 hover:w-64 transition-all duration-300 group">
+<div class="flex flex-col h-full">
+<div class="px-6 mb-8 flex items-center gap-4">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="dashboard">dashboard</span>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap overflow-hidden">
+<p class="text-primary font-bold text-label-caps font-label-caps">Mission Control</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest">Wind Farm Alpha</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 flex-grow">
+<!-- Dashboard Active -->
+<a class="bg-secondary-container/30 text-primary border-l-4 border-primary px-6 py-4 flex items-center gap-4 transition-all" href="Dashboard_Code.html">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity font-label-caps text-label-caps">Dashboard</span>
+</a>
+<a class="text-on-surface-variant hover:bg-white/5 px-6 py-4 flex items-center gap-4 transition-all" href="History_Log_Code.html">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity font-label-caps text-label-caps">Alert History</span>
+</a>
+<a class="text-on-surface-variant hover:bg-white/5 px-6 py-4 flex items-center gap-4 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity font-label-caps text-label-caps">System Status</span>
+</a>
+<a class="text-on-surface-variant hover:bg-white/5 px-6 py-4 flex items-center gap-4 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity font-label-caps text-label-caps">Settings</span>
+</a>
+</div>
+<div class="mt-auto flex flex-col gap-2 border-t border-white/10 pt-4 pb-6">
+<a class="text-on-surface-variant hover:bg-white/5 px-6 py-4 flex items-center gap-4 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity font-label-caps text-label-caps">Support</span>
+</a>
+<a class="text-on-surface-variant hover:bg-white/5 px-6 py-4 flex items-center gap-4 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity font-label-caps text-label-caps">Log Out</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Dashboard Content (Dimmed backdrop — becomes visible when no alerts) -->
+<main class="ml-20 pt-20 p-container-padding transition-all duration-300 opacity-30 grayscale-[50%] blur-sm pointer-events-none" id="main-backdrop">
+<div class="grid grid-cols-12 gap-grid-gutter">
+<!-- Global Health -->
+<div class="col-span-12 glass-panel p-6 rounded-xl flex items-center justify-between mb-4">
+<div>
+<h2 class="text-label-caps font-label-caps text-on-surface-variant mb-1 uppercase tracking-widest">Global Status</h2>
+<div class="flex items-center gap-3">
+<span class="w-3 h-3 bg-error rounded-full animate-pulse-glow"></span>
+<span class="text-display-lg font-display-lg text-error">CRITICAL ERROR</span>
+</div>
+</div>
+<div class="flex gap-12 text-right">
+<div>
+<p class="text-label-caps font-label-caps text-on-surface-variant">Active Turbines</p>
+<p class="text-data-lg font-data-lg">24/25</p>
+</div>
+<div>
+<p class="text-label-caps font-label-caps text-on-surface-variant">Grid Output</p>
+<p class="text-data-lg font-data-lg">84.2 MW</p>
+</div>
+</div>
+</div>
+<!-- Dashboard Grid -->
+<div class="col-span-8 grid grid-cols-2 gap-grid-gutter">
+<div class="glass-panel p-6 rounded-xl h-64">
+<h3 class="text-label-caps font-label-caps text-on-surface-variant mb-4">WIND SPEED MAP</h3>
+<div class="h-40 bg-surface-container-low rounded border border-white/5 overflow-hidden">
+<img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7tutuGxZEHCPlcbYYl9FUf-AzZ8wN5kApHBy6wHkMnXstK4kMy3JamjEG6aMRzXefWQnMJWkEpbuiTzQpjVo-81q6o0xj4iXIYxxKHdpcwiJ8s7xw9Nr7om_pptF_YLttgBf7K157Pfs4UY6yraIIfm_URYRfvwAqdvrhE1_oHdrxDIRmC52GEeHtqpJxc8FHDQxbxy6MCFgM1aKlKf_nxquInYuVfTGi0jXCDMOvMv-IRT1Omx30nmOVPpatcjgIJkvFd-1INH4" alt="Wind Speed Map"/>
+</div>
+</div>
+<div class="glass-panel p-6 rounded-xl h-64">
+<h3 class="text-label-caps font-label-caps text-on-surface-variant mb-4">POWER GENERATION (24H)</h3>
+<div class="h-40 flex items-end gap-1">
+<div class="bg-primary/20 w-full h-3/4"></div>
+<div class="bg-primary/20 w-full h-4/5"></div>
+<div class="bg-primary/20 w-full h-1/2"></div>
+<div class="bg-primary/40 w-full h-2/3"></div>
+<div class="bg-primary/60 w-full h-5/6"></div>
+<div class="bg-error/40 w-full h-1/5"></div>
+</div>
+</div>
+</div>
+<div class="col-span-4 glass-panel p-6 rounded-xl">
+<h3 class="text-label-caps font-label-caps text-on-surface-variant mb-4">LIVE SYSTEM LOG</h3>
+<div class="space-y-3 font-data-sm text-data-sm text-on-surface-variant">
+<div class="flex justify-between border-b border-white/5 pb-2">
+<span>14:15:30</span>
+<span class="text-error">WT-18 DISCONNECTED</span>
+</div>
+<div class="flex justify-between border-b border-white/5 pb-2">
+<span>14:12:45</span>
+<span class="text-on-tertiary-container">SYS-02 TEMP HIGH</span>
+</div>
+<div class="flex justify-between border-b border-white/5 pb-2">
+<span>14:10:05</span>
+<span class="text-error">WT-18 VOLTAGE DROPPED</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- ALERT POPUP MODAL OVERLAY -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center bg-background/60 backdrop-blur-sm px-6" id="alert-modal">
+<div class="glass-modal w-full max-w-2xl rounded-xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] transform scale-100 transition-transform duration-300">
+<!-- Header Glow Bar -->
+<div class="h-1 bg-error w-full shadow-[0_0_15px_rgba(239,68,68,1)]" id="modal-glow-bar"></div>
+<div class="p-8">
+<!-- Alert Title Section -->
+<div class="flex items-start gap-6 mb-8">
+<div class="p-4 bg-error/10 border border-error/30 rounded-full flex items-center justify-center animate-pulse-glow" id="modal-icon-wrap">
+<span class="material-symbols-outlined text-error text-5xl" data-icon="warning" style="font-variation-settings: 'FILL' 1;" id="modal-icon">warning</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-2">
+<span class="bg-error text-on-error text-label-caps font-label-caps px-2 py-0.5 rounded" id="modal-severity-badge">LOADING</span>
+<span class="text-on-surface-variant font-data-sm text-data-sm" id="modal-error-code" style="font-family:'JetBrains Mono',monospace">—</span>
+</div>
+<h1 class="text-headline-md font-headline-md text-on-surface font-bold tracking-tight" id="modal-title">Loading alert data…</h1>
+<p class="text-on-surface-variant mt-2 font-body-base text-body-base" id="modal-message">Connecting to API…</p>
+</div>
+</div>
+<!-- Status Grid -->
+<div class="grid grid-cols-3 gap-6 mb-10">
+<div class="bg-white/5 border border-white/10 p-4 rounded-lg">
+<p class="text-label-caps font-label-caps text-on-surface-variant mb-1 uppercase">Current Status</p>
+<p class="text-error font-data-lg text-data-lg" id="modal-status" style="font-family:'JetBrains Mono',monospace">—</p>
+</div>
+<div class="bg-white/5 border border-white/10 p-4 rounded-lg">
+<p class="text-label-caps font-label-caps text-on-surface-variant mb-1 uppercase">First Detected</p>
+<p class="text-on-surface font-data-lg text-data-lg" id="modal-timestamp" style="font-family:'JetBrains Mono',monospace;font-size:16px">—</p>
+</div>
+<div class="bg-white/5 border border-white/10 p-4 rounded-lg">
+<p class="text-label-caps font-label-caps text-on-surface-variant mb-1 uppercase">Alert State</p>
+<p class="text-on-surface font-data-lg text-data-lg" id="modal-state" style="font-family:'JetBrains Mono',monospace">—</p>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col gap-4">
+<button class="w-full bg-error hover:bg-error-container text-on-error-container font-headline-md py-5 rounded-lg border border-white/20 transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-3" id="ack-btn">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+Acknowledge Incident
+</button>
+<div class="grid grid-cols-3 gap-4">
+<button class="bg-surface-container-highest hover:bg-white/10 text-on-surface font-label-caps py-4 rounded border border-white/10 transition-colors flex flex-col items-center justify-center gap-1 snooze-btn" data-duration="15">
+<span class="text-on-surface-variant">Snooze</span>
+<span>15 min</span>
+</button>
+<button class="bg-surface-container-highest hover:bg-white/10 text-on-surface font-label-caps py-4 rounded border border-white/10 transition-colors flex flex-col items-center justify-center gap-1 snooze-btn" data-duration="30">
+<span class="text-on-surface-variant">Snooze</span>
+<span>30 min</span>
+</button>
+<button class="bg-surface-container-highest hover:bg-white/10 text-on-surface font-label-caps py-4 rounded border border-white/10 transition-colors flex flex-col items-center justify-center gap-1 snooze-btn" data-duration="60">
+<span class="text-on-surface-variant">Snooze</span>
+<span>60 min</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Footer Meta -->
+<div class="bg-surface-container-lowest px-8 py-4 flex justify-between items-center border-t border-white/10">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-error rounded-full animate-pulse"></span>
+<span class="text-label-caps font-label-caps text-on-surface-variant uppercase" id="modal-footer-label">Broadcasting to Local Authorities</span>
+</div>
+<a href="History_Log_Code.html" class="text-label-caps font-label-caps text-on-primary-container hover:text-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="info">info</span>
+VIEW ERROR LOGS
+</a>
+</div>
+</div>
+</div>
+<!-- No alerts state (shown when all cleared) -->
+<div class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/40 backdrop-blur-sm" id="no-alerts-screen" style="display:none!important">
+<span class="material-symbols-outlined text-emerald-400" style="font-size:72px">check_circle</span>
+<h2 class="text-headline-md font-headline-md text-emerald-400 mt-4">All Clear</h2>
+<p class="text-on-surface-variant mt-2">No active alerts. All turbines operational.</p>
+</div>
+<script>
+    // ---------------------------------------------------------------------------
+    // AeroMonitor v2.4 — Alert Notification API Integration
+    // ---------------------------------------------------------------------------
+
+    const API_BASE = '/api';
+    const REFRESH_INTERVAL_MS = 30000;
+
+    let _alerts = [];
+    let _currentAlertIndex = 0;
+    let _currentAlertId = null;
+    let _refreshTimer = null;
+
+    // ---------------------------------------------------------------------------
+    // Error banner
+    // ---------------------------------------------------------------------------
+    function showErrorBanner(msg) {
+        const b = document.getElementById('alert-error-banner');
+        b.textContent = '⚠ ' + (msg || 'Live data unavailable');
+        b.style.display = 'block';
+        setTimeout(() => { b.style.display = 'none'; }, 5000);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Populate modal with alert data
+    // ---------------------------------------------------------------------------
+    function populateModal(alert) {
+        if (!alert) return;
+        _currentAlertId = alert.id;
+
+        const isCritical = alert.severity === 'CRITICAL';
+        const glowBar = document.getElementById('modal-glow-bar');
+        const iconWrap = document.getElementById('modal-icon-wrap');
+        const icon = document.getElementById('modal-icon');
+        const severityBadge = document.getElementById('modal-severity-badge');
+
+        // Severity styling
+        if (isCritical) {
+            glowBar.className = 'h-1 bg-error w-full shadow-[0_0_15px_rgba(239,68,68,1)]';
+            iconWrap.className = 'p-4 bg-error/10 border border-error/30 rounded-full flex items-center justify-center animate-pulse-glow';
+            icon.className = 'material-symbols-outlined text-error text-5xl';
+            severityBadge.className = 'bg-error text-on-error text-label-caps font-label-caps px-2 py-0.5 rounded';
+            severityBadge.textContent = 'SYSTEM CRITICAL';
+        } else {
+            glowBar.className = 'h-1 bg-orange-500 w-full';
+            iconWrap.className = 'p-4 bg-orange-500/10 border border-orange-500/30 rounded-full flex items-center justify-center';
+            icon.className = 'material-symbols-outlined text-orange-400 text-5xl';
+            severityBadge.className = 'bg-orange-500/20 text-orange-400 text-label-caps font-label-caps px-2 py-0.5 rounded';
+            severityBadge.textContent = 'WARNING';
+        }
+
+        document.getElementById('modal-error-code').textContent = `ID: ${alert.error_code || alert.id}`;
+        document.getElementById('modal-title').textContent = `${alert.severity} ALERT: Turbine ${alert.turbine_name} — ${alert.state}`;
+        document.getElementById('modal-message').textContent = alert.message || 'No additional details available.';
+        document.getElementById('modal-status').textContent = alert.state;
+        document.getElementById('modal-state').textContent = alert.state;
+
+        let tsStr = '—';
+        if (alert.first_detected) {
+            try {
+                const d = new Date(alert.first_detected);
+                tsStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } catch (_) {}
+        }
+        document.getElementById('modal-timestamp').textContent = tsStr;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Show/hide the modal vs. the no-alerts screen
+    // ---------------------------------------------------------------------------
+    function showModal() {
+        const modal = document.getElementById('alert-modal');
+        modal.style.transition = 'opacity 0.35s ease, visibility 0.35s ease';
+        modal.style.opacity = '1';
+        modal.style.visibility = 'visible';
+        modal.style.display = 'flex';
+        document.getElementById('no-alerts-screen').style.setProperty('display', 'none', 'important');
+        document.getElementById('main-backdrop').classList.add('opacity-30', 'grayscale-[50%]', 'blur-sm', 'pointer-events-none');
+    }
+
+    function showNoAlerts() {
+        const modal = document.getElementById('alert-modal');
+        modal.style.transition = 'opacity 0.35s ease, visibility 0.35s ease';
+        modal.style.opacity = '0';
+        modal.style.visibility = 'hidden';
+        document.getElementById('no-alerts-screen').style.setProperty('display', 'flex', 'important');
+        document.getElementById('main-backdrop').classList.remove('opacity-30', 'grayscale-[50%]', 'blur-sm', 'pointer-events-none');
+    }
+
+    // ---------------------------------------------------------------------------
+    // Fade out modal, then show next alert or clear
+    // ---------------------------------------------------------------------------
+    function advanceAlert() {
+        const modal = document.getElementById('alert-modal');
+        modal.style.opacity = '0';
+        modal.style.transform = 'scale(0.97)';
+        setTimeout(() => {
+            modal.style.opacity = '';
+            modal.style.transform = '';
+            _currentAlertIndex++;
+            if (_currentAlertIndex < _alerts.length) {
+                populateModal(_alerts[_currentAlertIndex]);
+            } else {
+                // Refresh to see if more alerts exist
+                fetchActiveAlerts();
+            }
+        }, 350);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Fetch active alerts from API
+    // ---------------------------------------------------------------------------
+    async function fetchActiveAlerts() {
+        try {
+            const resp = await fetch(`${API_BASE}/alerts/active`);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            
+            // Filter alerts: the overlay modal should only display alerts in the 'OPEN' state.
+            // Acknowledged and Snoozed alerts are dismissed from the blocker modal.
+            _alerts = data.alerts.filter(a => a.state === 'OPEN');
+            _currentAlertIndex = 0;
+
+            // Update count badges
+            document.getElementById('count-open').textContent = `OPEN: ${data.counts.OPEN}`;
+            document.getElementById('count-ack').textContent = `ACK: ${data.counts.ACKNOWLEDGED}`;
+            document.getElementById('count-snoozed').textContent = `SNOOZED: ${data.counts.SNOOZED}`;
+
+            // The notifications dot shows if there are any active alerts in the system
+            const totalActive = data.alerts.length;
+            if (totalActive > 0) {
+                document.getElementById('notif-dot').style.display = 'block';
+            } else {
+                document.getElementById('notif-dot').style.display = 'none';
+            }
+
+            // The blocking modal overlay only shows if there are open incidents remaining
+            if (_alerts.length > 0) {
+                showModal();
+                populateModal(_alerts[0]);
+            } else {
+                showNoAlerts();
+            }
+        } catch (err) {
+            console.error('Failed to fetch active alerts:', err);
+            showErrorBanner('Could not load alert data from API.');
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Acknowledge action
+    // ---------------------------------------------------------------------------
+    document.getElementById('ack-btn').addEventListener('click', async () => {
+        if (!_currentAlertId) return;
+        const operatorName = prompt('Enter your name to acknowledge this alert:') || 'Operator';
+        try {
+            const resp = await fetch(`${API_BASE}/alerts/${_currentAlertId}/acknowledge`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "operator": operatorName }),
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            advanceAlert();
+        } catch (err) {
+            console.error('Acknowledge failed:', err);
+            showErrorBanner('Failed to acknowledge alert.');
+        }
+    });
+
+    // Snooze buttons
+    document.querySelectorAll('.snooze-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!_currentAlertId) return;
+            const duration = btn.getAttribute('data-duration');
+            try {
+                const resp = await fetch(`${API_BASE}/alerts/${_currentAlertId}/snooze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "duration_minutes": parseInt(duration, 10) }),
+                });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                advanceAlert();
+            } catch (err) {
+                console.error('Snooze failed:', err);
+                showErrorBanner('Failed to snooze alert.');
+            }
+        });
+    });
+
+    // Refresh button
+    document.getElementById('refresh-btn').addEventListener('click', fetchActiveAlerts);
+
+    // ---------------------------------------------------------------------------
+    // Auto-refresh every 30 seconds
+    // ---------------------------------------------------------------------------
+    fetchActiveAlerts();
+    _refreshTimer = setInterval(fetchActiveAlerts, REFRESH_INTERVAL_MS);
+
+    // Atmospheric micro-interaction: Subtle mouse tracking on modal glow
+    const modalContent = document.getElementById('alert-modal').querySelector('.glass-modal');
+    document.getElementById('alert-modal').addEventListener('mousemove', (e) => {
+        const { clientX, clientY } = e;
+        const xPercent = (clientX / window.innerWidth - 0.5) * 10;
+        const yPercent = (clientY / window.innerHeight - 0.5) * 10;
+        // Subtle parallax shadow effect preserved from original
+    });
+</script>
+</body></html>
