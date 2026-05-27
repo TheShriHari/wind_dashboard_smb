@@ -1,8 +1,10 @@
 # Android build generated files
-android_app/.gradle/
-android_app/app/build/
-android_app/build/
-android_app/local.properties
-android_app/*.keystore
-android_app/**/*.apk
-android_app/**/*.aab
+.gradle/
+app/build/
+build/
+local.properties
+*.keystore
+**/*.apk
+**/*.aab
+*.iml
+.idea/
