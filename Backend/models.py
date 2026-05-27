@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, Index, text
 from sqlmodel import Field, SQLModel
 
 
@@ -24,6 +24,10 @@ class TurbineTelemetry(SQLModel, table=True):
     """
 
     __tablename__ = "turbine_telemetry"
+
+    __table_args__ = (
+        Index("ix_turbine_telemetry_name_collected_desc", "turbine_name", text("collected_at DESC")),
+    )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     collected_at: datetime = Field(
@@ -38,7 +42,8 @@ class TurbineTelemetry(SQLModel, table=True):
     today_kwh: Optional[Decimal] = Field(default=None, decimal_places=2, max_digits=14)
     wind_speed: Optional[Decimal] = Field(default=None, decimal_places=2, max_digits=8)
     kw: Optional[Decimal] = Field(default=None, decimal_places=2, max_digits=12)
-    # Timestamp from the turbine's own internal clock
+    # Timestamp from the turbine's own internal localized clock.
+    # Intentionally naive (sa.TIMESTAMP without timezone) representing physical asset local time.
     turbine_datetime: Optional[datetime] = Field(default=None)
     raw_text: Optional[str] = Field(default=None)
 

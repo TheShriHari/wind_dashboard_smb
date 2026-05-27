@@ -90,21 +90,22 @@ def _make_client() -> httpx.AsyncClient:
     )
 
 
-def _extract_csrf_token(html: str) -> Optional[str]:
+def _extract_csrf_token(html: str) -> tuple[Optional[str], Optional[str]]:
     """
     Extract CSRF token from a login page if present.
     Tries common hidden-input names used by Django, Laravel, Rails, etc.
+    Returns (token_name, token_value) if found, otherwise (None, None).
     """
     soup = BeautifulSoup(html, "html.parser")
     for name in ("csrf_token", "_token", "csrfmiddlewaretoken", "__RequestVerificationToken"):
         tag = soup.find("input", {"name": name})
         if tag and tag.get("value"):
-            return str(tag["value"])
+            return name, str(tag["value"])
     # Also check meta tags (Django REST, Rails)
     meta = soup.find("meta", {"name": "csrf-token"})
     if meta and meta.get("content"):
-        return str(meta["content"])
-    return None
+        return "csrf-token", str(meta["content"])
+    return None, None
 
 
 async def login(client: httpx.AsyncClient) -> bool:
@@ -118,16 +119,15 @@ async def login(client: httpx.AsyncClient) -> bool:
     try:
         login_response = await client.get(ROOKTEC_URL)
         login_response.raise_for_status()
-        csrf_token = _extract_csrf_token(login_response.text)
+        csrf_name, csrf_token = _extract_csrf_token(login_response.text)
 
         form_data: dict[str, str] = {
             "user_nameTxt": ROOKTEC_USERNAME,
             "pass_wordTxt": ROOKTEC_PASSWORD,
             "submit": "Log in",
         }
-        if csrf_token:
-            form_data["csrfmiddlewaretoken"] = csrf_token
-            form_data["_token"] = csrf_token
+        if csrf_name and csrf_token:
+            form_data[csrf_name] = csrf_token
 
         # Find the form action URL (may differ from page URL)
         soup = BeautifulSoup(login_response.text, "html.parser")
@@ -367,24 +367,6 @@ async def _mark_all_unknown() -> None:
             logger.error("Failed to mark turbines UNKNOWN: %s", exc)
 
 
-async def _save_records(records: list[dict]) -> list[TurbineTelemetry]:
-    """Bulk insert telemetry records and return the saved ORM objects."""
-    saved: list[TurbineTelemetry] = []
-    async with async_session_factory() as session:
-        try:
-            for rec in records:
-                obj = TurbineTelemetry(**rec)
-                session.add(obj)
-                saved.append(obj)
-            await session.commit()
-            logger.info("Saved %d telemetry records to DB.", len(saved))
-        except Exception as exc:
-            await session.rollback()
-            logger.error("Failed to save telemetry records: %s", exc)
-            raise
-    return saved
-
-
 async def collection_cycle() -> None:
     """
     Single ingestion cycle — called by APScheduler every 15 minutes.
@@ -406,6 +388,7 @@ async def collection_cycle() -> None:
                 logger.error(
                     "Login failed. Consecutive failures: %d", _consecutive_failures
                 )
+                _client = None  # Reset client to force fresh login next cycle!
                 if _consecutive_failures >= _MAX_CONSECUTIVE_FAILURES:
                     await _mark_all_unknown()
                 return
@@ -423,6 +406,7 @@ async def collection_cycle() -> None:
                 logger.error(
                     "Re-login failed. Consecutive failures: %d", _consecutive_failures
                 )
+                _client = None  # Reset client to force fresh login next cycle!
                 if _consecutive_failures >= _MAX_CONSECUTIVE_FAILURES:
                     await _mark_all_unknown()
                 return
@@ -447,17 +431,29 @@ async def collection_cycle() -> None:
         # Successful parse — reset failure counter
         _consecutive_failures = 0
 
-        saved_records = await _save_records(records)
-
-        # Run alert state machine with the freshly saved records
+        # Run telemetry insertion and alert state machine in a single, unified database session scope
         async with async_session_factory() as session:
             try:
+                saved_records: list[TurbineTelemetry] = []
+                for rec in records:
+                    obj = TurbineTelemetry(**rec)
+                    session.add(obj)
+                    saved_records.append(obj)
+                
+                # Flush to database so the records are populated with auto-generated primary keys,
+                # keeping them attached and active in this transactional context.
+                await session.flush()
+                logger.info("Saved %d telemetry records to DB (flushed).", len(saved_records))
+
+                # Pass attached entities to the alert state machine in the exact same transaction context
                 await run_alert_state_machine(session, saved_records)
+                
                 await session.commit()
-                logger.info("Alert state machine completed successfully.")
-            except Exception as exc:
+                logger.info("Telemetry storage and alert state machine completed successfully.")
+            except Exception as db_exc:
                 await session.rollback()
-                logger.error("Alert state machine error: %s", exc)
+                logger.error("Failed to commit database transaction in collection cycle: %s", db_exc)
+                raise
 
     except httpx.HTTPError as exc:
         _consecutive_failures += 1

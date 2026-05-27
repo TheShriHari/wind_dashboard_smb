@@ -236,12 +236,12 @@ async def get_live_telemetry(session: AsyncSession = Depends(get_session)) -> Li
     total_kwh = 0.0
 
     for row in rows:
-        status = (row["status"] or "UNKNOWN").upper()
+        status = (row["status"] or "UNKNOWN").upper().strip().rstrip(".")
         kwh_val = float(row["today_kwh"]) if row["today_kwh"] is not None else 0.0
 
         if status == "OPERATIONAL":
             operational_count += 1
-        elif status in ("FAILURE", "FAILED", "ERROR", "OFFLINE", "MAINTENANCE", "UNKNOWN"):
+        else:
             failed_count += 1
 
         total_kwh += kwh_val
@@ -341,6 +341,8 @@ async def acknowledge_alert(
     alert.acknowledged_by = body.operator
     alert.last_notified = datetime.now(timezone.utc)
     session.add(alert)
+    await session.commit()
+    await session.refresh(alert)
 
     return AcknowledgeResponse(success=True, alert=_alert_to_record(alert))
 
@@ -381,6 +383,8 @@ async def snooze_alert(
     alert.state = "SNOOZED"
     alert.snoozed_until = snoozed_until
     session.add(alert)
+    await session.commit()
+    await session.refresh(alert)
 
     return SnoozeResponse(success=True, snoozed_until=snoozed_until)
 
