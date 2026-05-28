@@ -18,7 +18,15 @@ INTERVAL_SECONDS = 15 * 60
 
 def setup_driver():
     options = Options()
-    options.add_argument("--start-maximized")
+    import sys
+    if sys.platform.startswith("linux"):
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--window-size=1920,1080")
+    else:
+        options.add_argument("--start-maximized")
 
     driver = webdriver.Chrome(options=options)
     driver.set_page_load_timeout(60)
